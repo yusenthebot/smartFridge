@@ -1,0 +1,12 @@
+gradio
+opencv-python
+numpy
+pandas
+scikit-learn
+supervision
+roboflow
+huggingface_hub
+joblib
+xgboost
+tqdm
+Pillow
