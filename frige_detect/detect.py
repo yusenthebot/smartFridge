@@ -9,13 +9,60 @@ Detect ingredients using a Roboflow model with preprocessing:
 
 import json
 import os
+import tempfile
+from dataclasses import dataclass
+
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from roboflow import Roboflow
 from sklearn.cluster import KMeans
 import supervision as sv
-import tempfile
+
+
+@dataclass
+class RoboflowCredentials:
+    api_key: str
+    project_name: str
+    version: int = 1
+
+
+def load_roboflow_credentials(path: str) -> RoboflowCredentials:
+    """Load Roboflow API credentials from a simple key=value text file."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Roboflow credential file not found: {path}."
+        )
+
+    api_key = None
+    project_name = None
+    version = 1
+
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip().lower()
+            value = value.strip()
+            if key == "api_key":
+                api_key = value
+            elif key == "project_name":
+                project_name = value
+            elif key == "version":
+                try:
+                    version = int(value)
+                except ValueError:
+                    raise ValueError("Version in credential file must be an integer") from None
+
+    if not api_key or not project_name:
+        raise ValueError(
+            "Credential file must contain api_key and project_name entries."
+        )
+
+    return RoboflowCredentials(api_key=api_key, project_name=project_name, version=version)
 
 def compute_area_ratios(predictions, img_shape):
     """Compute area ratio (bbox area / image area) for each detection."""
@@ -36,9 +83,7 @@ def cluster_sizes(area_ratios):
 
 def detect_and_generate(
     image_path: str,
-    api_key: str,
-    project_name: str,
-    version: int,
+    credentials: RoboflowCredentials,
     conf_threshold: float = 0.4,
     overlap_threshold: float = 0.3,
     conf_split: float = 0.7,
@@ -84,8 +129,8 @@ def detect_and_generate(
         img_for_annotation = original_img
 
     # Initialize Roboflow model
-    rf = Roboflow(api_key=api_key)
-    model = rf.workspace().project(project_name).version(version).model
+    rf = Roboflow(api_key=credentials.api_key)
+    model = rf.workspace().project(credentials.project_name).version(credentials.version).model
 
     # Run prediction
     response = model.predict(
@@ -148,12 +193,6 @@ def detect_and_generate(
     cv2.imwrite(output_image, annotated_img)
 
     # Display annotated image (optional, for notebooks)
-    plt.figure(figsize=(8, 8))
-    plt.imshow(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB))
-    plt.axis("off")
-    plt.title("Annotated Image with K-Means Size Labels")
-    plt.show()
-
     # Clean up temporary file
     if height != 640 or width != 640:
         try:
@@ -162,13 +201,8 @@ def detect_and_generate(
             # If still locked on Windows, delay deletion or log a warning
             pass
 
-    return recipe_json
-
-# Example call:
-result_json = detect_and_generate(
-    image_path="demo/t2.jpg",
-    api_key="t2nRJrn7ppJIC8RGHdwk",
-    project_name="nutrition-object-detection",
-    version=1
-)
-print(json.dumps(result_json, indent=4))
+    return {
+        "recipe_json": recipe_json,
+        "output_json_path": output_json,
+        "annotated_image_path": output_image,
+    }

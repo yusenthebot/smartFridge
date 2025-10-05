@@ -17,13 +17,24 @@ import pandas as pd
 from pathlib import Path
 import shutil
 
-from src.io import load_recipes_csv, load_ingredient_map, download_file
-from src.coldstart import cold_start_ranker
-from src.trainmodel import train_model_ranker
-from src.candidate import coarse_rank_candidates, ml_generate_candidates, hard_filter
-from src.highlight import print_candidates, diversify_topk_with_min_clusters
-from src.feature import build_features, build_cluster_features
-from src.embedding import find_most_similar_user
+from recipe_recommendation.src.io import load_recipes_csv, load_ingredient_map, download_file
+from recipe_recommendation.src.coldstart import cold_start_ranker
+from recipe_recommendation.src.trainmodel import train_model_ranker
+from recipe_recommendation.src.candidate import (
+    coarse_rank_candidates,
+    ml_generate_candidates,
+    hard_filter,
+)
+from recipe_recommendation.src.highlight import (
+    print_candidates,
+    diversify_topk_with_min_clusters,
+)
+from recipe_recommendation.src.feature import build_features, build_cluster_features
+from recipe_recommendation.src.embedding import find_most_similar_user
+
+
+BASE_DIR = Path(__file__).resolve().parent
+USER_DATA_DIR = BASE_DIR / "user_data"
 
 
 
@@ -198,7 +209,7 @@ def ensure_user_profile(user_id):
     """
     import os, json
 
-    profile_file = os.path.join("user_data", user_id, "user_profile.json")
+    profile_file = USER_DATA_DIR / user_id / "user_profile.json"
     if not os.path.exists(profile_file):
         raise FileNotFoundError(
             f"Missing profile: {profile_file}. Please create one first."
@@ -218,7 +229,8 @@ def ensure_user_profile(user_id):
 
     
 def save_user_profile(user_id, profile):
-    profile_path = Path(f"user_data/{user_id}/user_profile.json")
+    profile_path = USER_DATA_DIR / user_id / "user_profile.json"
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
     with open(profile_path, "w", encoding="utf-8") as f:
         json.dump(profile, f, indent=2)
 
@@ -228,10 +240,10 @@ def collect_user_feedback(user_id: str, selected_recipe_row: dict, user_profile:
     - Uses build_features() to ensure feature alignment with training
     - Maintains a fixed feature order via feature_order.json
     """
-    user_dir = os.path.join("user_data", user_id)
-    os.makedirs(user_dir, exist_ok=True)
-    feedback_path = os.path.join(user_dir, "feedback.csv")
-    feature_order_path = os.path.join(user_dir, "feature_order.json")
+    user_dir = USER_DATA_DIR / user_id
+    user_dir.mkdir(parents=True, exist_ok=True)
+    feedback_path = user_dir / "feedback.csv"
+    feature_order_path = user_dir / "feature_order.json"
 
     recipe_dict = {
         "main": selected_recipe_row.get("main_parent", set()),
@@ -288,10 +300,10 @@ def collect_user_feedback(user_id: str, selected_recipe_row: dict, user_profile:
 
 
 def ensure_model(user_id):
-    base_dir = os.path.join("user_data", user_id)
-    os.makedirs(base_dir, exist_ok=True)
-    features_rank = os.path.join(base_dir, "user_features_rank.csv")
-    model_file = os.path.join(base_dir, "ranker.pkl")
+    base_dir = USER_DATA_DIR / user_id
+    base_dir.mkdir(parents=True, exist_ok=True)
+    features_rank = base_dir / "user_features_rank.csv"
+    model_file = base_dir / "ranker.pkl"
 
     if not os.path.exists(features_rank):
         print("[main] No cold-start features found; running cold_start_ranker() ...")
@@ -338,7 +350,7 @@ def prepare_recipes_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def maybe_retrain_model(user_id):
-    profile_path = Path(f"user_data/{user_id}/user_profile.json")
+    profile_path = USER_DATA_DIR / user_id / "user_profile.json"
     if not profile_path.exists():
         return
 
@@ -348,14 +360,14 @@ def maybe_retrain_model(user_id):
     if n_fb > 0 and n_fb % 20 == 0:
         print(f"[main] {n_fb} feedback reached, retraining ranker...")
 
-        model_path = Path(f"user_data/{user_id}/ranker.pkl")
+        model_path = USER_DATA_DIR / user_id / "ranker.pkl"
         if model_path.exists():
             model_path.unlink()
 
         train_model_ranker(user_id)
 
 def get_next_qid(user_id: str) -> int:
-    user_dir = Path(f"user_data/{user_id}")
+    user_dir = USER_DATA_DIR / user_id
     user_dir.mkdir(parents=True, exist_ok=True)
     qid_path = user_dir / "qid.txt"
 
@@ -403,13 +415,13 @@ def main(user_id="user_1",
     if match_uid is not None:
         print(f"[main] Using model of similar user '{match_uid}' for '{user_id}' (sim={sim:.3f})")
 
-        src_dir = os.path.join("user_data", match_uid)
-        dst_dir = os.path.join("user_data", user_id)
-        os.makedirs(dst_dir, exist_ok=True)
+        src_dir = USER_DATA_DIR / match_uid
+        dst_dir = USER_DATA_DIR / user_id
+        dst_dir.mkdir(parents=True, exist_ok=True)
 
         for fname in ["ranker.pkl", "user_features_rank.csv"]:
-            src = os.path.join(src_dir, fname)
-            dst = os.path.join(dst_dir, fname)
+            src = src_dir / fname
+            dst = dst_dir / fname
             if os.path.exists(src) and not os.path.exists(dst):
                 shutil.copyfile(src, dst)
                 print(f"[embedding] Copied {fname} from {match_uid} to {user_id}")
@@ -513,12 +525,12 @@ def recommend_recipes(detection_payload, user_id, recipes_df, topk=5):
     match_uid, sim = find_most_similar_user(user_id, threshold=0.85)
     if match_uid is not None:
         print(f"[embedding] Using model of similar user '{match_uid}' for '{user_id}' (sim={sim:.3f})")
-        src_dir = os.path.join("user_data", match_uid)
-        dst_dir = os.path.join("user_data", user_id)
-        os.makedirs(dst_dir, exist_ok=True)
+        src_dir = USER_DATA_DIR / match_uid
+        dst_dir = USER_DATA_DIR / user_id
+        dst_dir.mkdir(parents=True, exist_ok=True)
         for fname in ["ranker.pkl", "user_features_rank.csv"]:
-            src = os.path.join(src_dir, fname)
-            dst = os.path.join(dst_dir, fname)
+            src = src_dir / fname
+            dst = dst_dir / fname
             if os.path.exists(src) and not os.path.exists(dst):
                 shutil.copyfile(src, dst)
                 print(f"[embedding] Copied {fname} from {match_uid} to {user_id}")
