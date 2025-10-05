@@ -67,20 +67,6 @@ def write_temp_image(image: np.ndarray) -> str:
     return str(temp_path)
 
 
-def _coerce_range(range_like: Any) -> Tuple[float, float]:
-    """Ensure incoming value can be treated as a numeric (min, max) tuple."""
-    if isinstance(range_like, (list, tuple)):
-        if len(range_like) == 2:
-            return float(range_like[0]), float(range_like[1])
-        if len(range_like) == 1:
-            value = float(range_like[0])
-            return value, value
-    if isinstance(range_like, (int, float)):
-        value = float(range_like)
-        return value, value
-    raise ValueError("Expected a numeric range represented as a tuple, list, or number.")
-
-
 def build_user_profile(
     user_id: str,
     vegetarian_type: str,
@@ -103,9 +89,6 @@ def build_user_profile(
         num_feedback = existing.get("num_feedback", 0)
     else:
         num_feedback = 0
-
-    calorie_range = _coerce_range(calorie_range)
-    protein_range = _coerce_range(protein_range)
 
     profile = {
         "user_id": user_id,
@@ -224,10 +207,8 @@ def run_pipeline(
     vegetarian_type,
     allergies,
     regions,
-    calorie_min,
-    calorie_max,
-    protein_min,
-    protein_max,
+    calorie_range,
+    protein_range,
     preferred_main,
     disliked_main,
     cooking_time,
@@ -249,14 +230,6 @@ def run_pipeline(
             output_image=str(output_image),
         )
         Path(upload_path).unlink(missing_ok=True)
-
-        calorie_range = (float(calorie_min), float(calorie_max))
-        if calorie_range[0] > calorie_range[1]:
-            calorie_range = (calorie_range[1], calorie_range[0])
-
-        protein_range = (float(protein_min), float(protein_max))
-        if protein_range[0] > protein_range[1]:
-            protein_range = (protein_range[1], protein_range[0])
 
         profile = build_user_profile(
             user_id,
@@ -292,7 +265,7 @@ def run_pipeline(
             detection_payload,
             ingredient_summary,
             recommendation_md,
-            gr.update(choices=dropdown_choices, value=None),
+            gr.Dropdown.update(choices=dropdown_choices, value=None),
             feedback_rows,
             status,
         )
@@ -302,7 +275,7 @@ def run_pipeline(
             None,
             "",
             "",
-            gr.update(choices=[], value=None),
+            gr.Dropdown.update(choices=[], value=None),
             [],
             f"❗️ Error: {exc}",
         )
@@ -395,32 +368,18 @@ with gr.Blocks(title="Smart Fridge Recipe Assistant", theme=gr.themes.Soft()) as
                 label="Preferred regions (comma separated)",
                 placeholder="Asia, Europe",
             )
-            calorie_min_slider = gr.Slider(
+            calorie_slider = gr.RangeSlider(
                 minimum=0,
                 maximum=4000,
-                value=400,
-                label="Min calories",
+                value=(400, 2000),
+                label="Calorie range",
                 step=50,
             )
-            calorie_max_slider = gr.Slider(
-                minimum=0,
-                maximum=4000,
-                value=2000,
-                label="Max calories",
-                step=50,
-            )
-            protein_min_slider = gr.Slider(
+            protein_slider = gr.RangeSlider(
                 minimum=0,
                 maximum=250,
-                value=50,
-                label="Min protein",
-                step=5,
-            )
-            protein_max_slider = gr.Slider(
-                minimum=0,
-                maximum=250,
-                value=160,
-                label="Max protein",
+                value=(50, 160),
+                label="Protein range",
                 step=5,
             )
             preferred_box = gr.Textbox(
@@ -454,10 +413,8 @@ with gr.Blocks(title="Smart Fridge Recipe Assistant", theme=gr.themes.Soft()) as
             vegetarian_radio,
             allergies_box,
             regions_box,
-            calorie_min_slider,
-            calorie_max_slider,
-            protein_min_slider,
-            protein_max_slider,
+            calorie_slider,
+            protein_slider,
             preferred_box,
             disliked_box,
             cooking_slider,
