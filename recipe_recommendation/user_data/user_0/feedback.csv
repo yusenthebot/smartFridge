@@ -1,0 +1,2 @@
+main_match_ratio,other_match_ratio,staple_match_ratio,missing_main_count,missing_other_count,missing_staple_count,calories,protein,fat,protein_ratio,fat_ratio,region_match,is_vegan_safe,is_vegetarian_safe_absolute,is_flexible_safe_absolute,is_user_diet_safe,low_calorie_penalty,preferred_main_overlap,preferred_course_overlap,within_cooking_time,recipe_id,qid,relevance
+0.0,0.0,0.0,1,3,1,123.9,0,0,0.0,0.0,0,0,0,0,1,1,0,0,1,73148,0,5

@@ -1,0 +1,18 @@
+{
+  "user_id": "user_001",
+  "num_feedback": 0,
+  "diet": {
+    "vegetarian_type": "flexible_vegetarian"
+  },
+  "allergies": ["peanut", "shrimp"],
+  "region_preference": ["Asia", "Europe"],
+  "nutritional_goals": {
+    "calories": { "min": 400, "max": 3000 },
+    "protein": { "min": 100, "max": 160 }
+  },
+  "other_preferences": {
+    "preferred_main": ["chicken", "tofu"],
+    "disliked_main": ["lamb"],
+    "cooking_time_max": 40
+  }
+}

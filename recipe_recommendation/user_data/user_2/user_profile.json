@@ -1,0 +1,18 @@
+{
+  "user_id": "user_002",
+  "num_feedback": 0,
+  "diet": {
+    "vegetarian_type": "non_vegetarian"
+  },
+  "allergies": ["milk", "gluten"],
+  "region_preference": ["North America", "Latin America"],
+  "nutritional_goals": {
+    "calories": { "min": 500, "max": 2500 },
+    "protein": { "min": 130, "max": 200 }
+  },
+  "other_preferences": {
+    "preferred_main": ["beef", "salmon", "eggs"],
+    "disliked_main": ["pork"],
+    "cooking_time_max": 30
+  }
+}

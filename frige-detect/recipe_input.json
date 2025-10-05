@@ -1,0 +1,86 @@
+{
+    "ingredients": [
+        {
+            "name": "sugar",
+            "quantity": "large",
+            "confidence": 0.91
+        },
+        {
+            "name": "chicken",
+            "quantity": "large",
+            "confidence": 0.91
+        },
+        {
+            "name": "milk",
+            "quantity": "large",
+            "confidence": 0.89
+        },
+        {
+            "name": "flour",
+            "quantity": "large",
+            "confidence": 0.88
+        },
+        {
+            "name": "eggs",
+            "quantity": "small",
+            "confidence": 0.88
+        },
+        {
+            "name": "apple",
+            "quantity": "large",
+            "confidence": 0.86
+        },
+        {
+            "name": "corn",
+            "quantity": "small",
+            "confidence": 0.85
+        },
+        {
+            "name": "blueberries",
+            "quantity": "small",
+            "confidence": 0.83
+        },
+        {
+            "name": "chicken_breast",
+            "quantity": "large",
+            "confidence": 0.82
+        },
+        {
+            "name": "ground_beef",
+            "quantity": "large",
+            "confidence": 0.81
+        },
+        {
+            "name": "beef",
+            "quantity": "large",
+            "confidence": 0.77
+        },
+        {
+            "name": "carrot",
+            "quantity": "large",
+            "confidence": 0.75
+        },
+        {
+            "name": "bread",
+            "quantity": "large",
+            "confidence": 0.51
+        }
+    ],
+    "high_confidence_ingredients": [
+        "sugar",
+        "chicken",
+        "milk",
+        "flour",
+        "eggs",
+        "apple",
+        "corn",
+        "blueberries",
+        "chicken_breast",
+        "ground_beef",
+        "beef",
+        "carrot"
+    ],
+    "low_confidence_ingredients": [
+        "bread"
+    ]
+}
